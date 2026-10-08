@@ -150,4 +150,10 @@ print("EBIT:", round(ebit, 2))
 print("EBT:", round(ebt, 2))
 print("Чистая прибыль:", round(net_profit, 2))
 
+layout = pd.read_excel("layout.xlsx")
+
+full = layout.merge(report, on=["section", "pl_line"], how="left")
+full["final_amount"] = full["final_amount"].fillna(0)
+
+print(full[["block", "pl_line", "final_amount"]].to_string())
 
