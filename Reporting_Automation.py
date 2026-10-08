@@ -164,8 +164,9 @@ def add(label, value, kind):
     rows.append({"label": label, "value": value, "kind": kind})
 
 
-def add_block(title, block):
-    add(title, block_sum[block], "subtotal")
+def add_block(title, block, header=True):
+    if header:
+        add(title, block_sum[block], "subtotal")
     part = full[full["block"] == block]
     for name, value in zip(part["pl_line"], part["final_amount"]):
         add(name, value, "line")
@@ -192,14 +193,25 @@ add("Операционная прибыль", operating_profit, "result")
 add_block("Прочие прибыли / убытки", "Прочие прибыли / убытки")
 add("EBIT", ebit, "result")
 
-add_block("Финансовые расходы", "Финансовые расходы")
+add_block("Финансовые расходы", "Финансовые расходы", header=False)
 add("EBT", ebt, "result")
 
-add_block("КПН", "Налог")
+add_block("КПН", "Налог", header=False)
 add("Чистая прибыль", net_profit, "result")
 
 pl = pd.DataFrame(rows)
 pl["value"] = pl["value"].round(2)
-print(pl.to_string())
+
+OUTPUT_DIR = Path("data_output")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+period = report["period"].iloc[0]
+out_path = OUTPUT_DIR / f"PL_{period}.xlsx"
+
+pl_out = pl[["label", "value"]].rename(columns={"label": "Статья", "value": "тыс. тенге"})
+pl_out.to_excel(out_path, index=False, sheet_name="PL")
+
+print("Сохранено:", out_path)
+
 
 
