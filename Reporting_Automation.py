@@ -155,5 +155,51 @@ layout = pd.read_excel("layout.xlsx")
 full = layout.merge(report, on=["section", "pl_line"], how="left")
 full["final_amount"] = full["final_amount"].fillna(0)
 
-print(full[["block", "pl_line", "final_amount"]].to_string())
+block_sum = full.groupby("block")["final_amount"].sum()
+
+rows = []
+
+
+def add(label, value, kind):
+    rows.append({"label": label, "value": value, "kind": kind})
+
+
+def add_block(title, block):
+    add(title, block_sum[block], "subtotal")
+    part = full[full["block"] == block]
+    for name, value in zip(part["pl_line"], part["final_amount"]):
+        add(name, value, "line")
+
+
+add_block("Доход", "Доход")
+
+add("Себестоимость - итого", cost, "total")
+add_block("Себестоимость - общие", "Себестоимость - общие")
+add_block("Себестоимость - специфические", "Себестоимость - специфические")
+add("Валовая прибыль", gross_profit, "result")
+
+add("Расходы по реализации - итого", selling, "total")
+add_block("Расходы по реализации - общие", "Расходы по реализации - общие")
+add_block("Расходы по реализации - специфические", "Расходы по реализации - специфические")
+
+add("Административные расходы - итого", admin, "total")
+add_block("Административные расходы - общие", "Административные расходы - общие")
+add("EBITDA", ebitda, "result")
+
+add_block("Амортизация", "Амортизация")
+add("Операционная прибыль", operating_profit, "result")
+
+add_block("Прочие прибыли / убытки", "Прочие прибыли / убытки")
+add("EBIT", ebit, "result")
+
+add_block("Финансовые расходы", "Финансовые расходы")
+add("EBT", ebt, "result")
+
+add_block("КПН", "Налог")
+add("Чистая прибыль", net_profit, "result")
+
+pl = pd.DataFrame(rows)
+pl["value"] = pl["value"].round(2)
+print(pl.to_string())
+
 
