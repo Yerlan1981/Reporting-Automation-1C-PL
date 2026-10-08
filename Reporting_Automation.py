@@ -110,6 +110,11 @@ share_by_line = {
 merged["share"] = merged["pl_line"].map(share_by_line).fillna(1)
 merged["final_amount"] = merged["amount"] * merged["sign"] * merged["share"]
 
-tmz = merged[merged["pl_line"].isin(share_by_line)]
-print(tmz[["pl_line", "amount", "share", "final_amount"]])
-print(tmz["final_amount"].sum())
+report = (
+    merged.groupby(["period", "section", "pl_line"], as_index=False)["final_amount"]
+    .sum()
+)
+report["final_amount"] = report["final_amount"] / 1000
+
+print(report.to_string())
+
