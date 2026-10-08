@@ -102,4 +102,14 @@ print(unrecognized[["account", "article", "amount", "pl_line"]])
 settings_table = pd.read_excel("settings.xlsx")
 settings = dict(zip(settings_table["key"], settings_table["value"]))
 
-print(settings)
+share_by_line = {
+    "ТМЗ - основное производство": settings["gas_share"],
+    "ТМЗ - логистические расходы": settings["logistics_share"],
+}
+
+merged["share"] = merged["pl_line"].map(share_by_line).fillna(1)
+merged["final_amount"] = merged["amount"] * merged["sign"] * merged["share"]
+
+tmz = merged[merged["pl_line"].isin(share_by_line)]
+print(tmz[["pl_line", "amount", "share", "final_amount"]])
+print(tmz["final_amount"].sum())
