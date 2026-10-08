@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 import re
 
 pd.set_option("display.max_columns", None)
@@ -210,8 +211,34 @@ out_path = OUTPUT_DIR / f"PL_{period}.xlsx"
 
 pl_out = pl[["label", "value"]].rename(columns={"label": "Статья", "value": "тыс. тенге"})
 pl_out.to_excel(out_path, index=False, sheet_name="PL")
+wb = load_workbook(out_path)
+ws = wb["PL"]
 
+bold = Font(bold=True)
+gray = PatternFill("solid", fgColor="D9D9D9")
+
+for cell in ws[1]:
+    cell.font = bold
+
+for row_num, kind in enumerate(pl["kind"], start=2):
+    label_cell = ws.cell(row=row_num, column=1)
+    value_cell = ws.cell(row=row_num, column=2)
+
+    value_cell.number_format = '#,##0.00;-#,##0.00;"-"'
+
+    if kind == "line":
+        label_cell.alignment = Alignment(indent=2)
+    else:
+        label_cell.font = bold
+        value_cell.font = bold
+
+    if kind == "result":
+        label_cell.fill = gray
+        value_cell.fill = gray
+
+ws.column_dimensions["A"].width = 60
+ws.column_dimensions["B"].width = 16
+ws.freeze_panes = "A2"
+
+wb.save(out_path)
 print("Сохранено:", out_path)
-
-
-
