@@ -7,27 +7,9 @@ pd.set_option("display.width", 250)
 pd.options.display.float_format = "{:,.2f}".format
 
 INPUT_DIR = Path("data_input")
-
 files = list(INPUT_DIR.glob("*.xlsx"))
-print(files)
 
-df = pd.read_excel(files[0], sheet_name="ОСВ", header=None)
 
-ws = load_workbook(files[0])["ОСВ"]
-df["indent"] = [ws.cell(row=i + 1, column=1).alignment.indent for i in range(len(df))]
-
-first_col = df[0].astype(str)
-
-headers = first_col[first_col.str.contains("по счету")]
-
-accounts = headers.str.extract(r"по счету (\d+)")[0]
-
-starts = headers.index.tolist()
-ends = starts[1:] + [len(df)]
-
-blocks = {}
-for account, start, end in zip(accounts, starts, ends):
-    blocks[account] = df.iloc[start:end]
 def clean_block(block, account):
     block = block[[0, 4, 5, "indent"]].copy()
     block.columns = ["article", "debit", "credit", "indent"]
@@ -44,14 +26,37 @@ def clean_block(block, account):
     return rows[["account", "article", "debit", "credit"]]
 
 
-tables = []
-for account in blocks:
-    tables.append(clean_block(blocks[account], account))
+def load_osv(path):
+    df = pd.read_excel(path, sheet_name="ОСВ", header=None)
 
-osv = pd.concat(tables, ignore_index=True)
-osv["amount"] = osv["credit"].where(osv["account"].str.startswith("6"), osv["debit"])
-osv["amount"] = osv["amount"].fillna(0)
+    ws = load_workbook(path)["ОСВ"]
+    df["indent"] = [ws.cell(row=i + 1, column=1).alignment.indent for i in range(len(df))]
 
-print(osv)
-print(osv.groupby("account")["amount"].sum())
+    first_col = df[0].astype(str)
+    headers = first_col[first_col.str.contains("по счету")]
+    accounts = headers.str.extract(r"по счету (\d+)")[0]
+
+    starts = headers.index.tolist()
+    ends = starts[1:] + [len(df)]
+
+    tables = []
+    for account, start, end in zip(accounts, starts, ends):
+        tables.append(clean_block(df.iloc[start:end], account))
+
+    osv = pd.concat(tables, ignore_index=True)
+    osv["amount"] = osv["credit"].where(osv["account"].str.startswith("6"), osv["debit"])
+    osv["amount"] = osv["amount"].fillna(0)
+    return osv
+
+
+all_tables = []
+for file in files:
+    table = load_osv(file)
+    table["period"] = file.stem[-7:].replace("_", "-")
+    all_tables.append(table)
+
+osv = pd.concat(all_tables, ignore_index=True)
+
+print(osv.groupby(["period", "account"])["amount"].sum())
+
 
