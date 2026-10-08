@@ -99,3 +99,7 @@ unrecognized = merged[(~merged["recognized"]) & (merged["amount"] != 0)]
 print("Нераспознанные статьи с суммой:")
 print(unrecognized[["account", "article", "amount", "pl_line"]])
 
+settings_table = pd.read_excel("settings.xlsx")
+settings = dict(zip(settings_table["key"], settings_table["value"]))
+
+print(settings)
