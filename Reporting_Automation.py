@@ -116,5 +116,18 @@ report = (
 )
 report["final_amount"] = report["final_amount"] / 1000
 
-print(report.to_string())
+totals = report.groupby("section")["final_amount"].sum()
+
+income = totals["Доход"]
+cost = totals["Себестоимость"]
+selling = totals["Расходы по реализации"]
+admin = totals["Административные расходы"]
+
+gross_profit = income - cost
+ebitda = gross_profit - selling - admin
+
+print(totals)
+print("Валовая прибыль:", round(gross_profit, 2))
+print("EBITDA:", round(ebitda, 2))
+
 
