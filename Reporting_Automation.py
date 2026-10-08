@@ -126,8 +126,28 @@ admin = totals["Административные расходы"]
 gross_profit = income - cost
 ebitda = gross_profit - selling - admin
 
-print(totals)
+def line(section, pl_line):
+    mask = (report["section"] == section) & (report["pl_line"] == pl_line)
+    return report.loc[mask, "final_amount"].sum()
+
+
+depreciation = line("Прочее", "Амортизация - Амортизация") + line("Прочее", "Амортизация - Амортизация - офис")
+operating_profit = ebitda - depreciation
+
+other_result = line("Прочее", "Курсовые разницы") + line("Прочее", "Выбытие активов") + line("Прочее", "Прочее")
+ebit = operating_profit - other_result
+
+finance = line("Прочее", "Финансовые расходы") + line("Прочее", "Начисленные финансовые расходы")
+ebt = ebit - finance
+
+tax = line("Прочее", "КПН")
+net_profit = ebt - tax
+
 print("Валовая прибыль:", round(gross_profit, 2))
 print("EBITDA:", round(ebitda, 2))
+print("Операционная прибыль:", round(operating_profit, 2))
+print("EBIT:", round(ebit, 2))
+print("EBT:", round(ebt, 2))
+print("Чистая прибыль:", round(net_profit, 2))
 
 
