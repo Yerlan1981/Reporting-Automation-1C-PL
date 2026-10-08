@@ -242,3 +242,19 @@ ws.freeze_panes = "A2"
 
 wb.save(out_path)
 print("Сохранено:", out_path)
+
+check = pd.DataFrame(
+    {
+        "osv": osv.groupby("account")["amount"].sum(),
+        "report": (merged["amount"] * merged["share"]).groupby(merged["account"]).sum(),
+    }
+)
+check["diff"] = (check["osv"] - check["report"]).round(2)
+
+print(check)
+
+if (check["diff"] != 0).any():
+    print("ВНИМАНИЕ: часть сумм ОСВ не попала в отчёт!")
+else:
+    print("Контроль пройден: всё разнесённое равно итогу ОСВ.")
+    
