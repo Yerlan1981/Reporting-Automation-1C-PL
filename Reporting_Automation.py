@@ -49,5 +49,9 @@ for account in blocks:
     tables.append(clean_block(blocks[account], account))
 
 osv = pd.concat(tables, ignore_index=True)
+osv["amount"] = osv["credit"].where(osv["account"].str.startswith("6"), osv["debit"])
+osv["amount"] = osv["amount"].fillna(0)
+
 print(osv)
-print(osv.groupby("account")[["debit", "credit"]].sum())
+print(osv.groupby("account")["amount"].sum())
+
