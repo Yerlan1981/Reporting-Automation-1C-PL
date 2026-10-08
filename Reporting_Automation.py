@@ -70,13 +70,32 @@ osv = pd.concat(all_tables, ignore_index=True)
 
 print(osv.groupby(["period", "account"])["amount"].sum())
 
-pairs = osv[["account", "article"]].drop_duplicates()
-pairs["pl_line"] = ""
 mapping = pd.read_excel("mapping.xlsx", dtype={"account": str})
 mapping["article"] = mapping["article"].str.strip()
-
 merged = osv.merge(mapping, on=["account", "article"], how="left")
+fallback = pd.DataFrame(
+    [
+        ("6010", "Доход", "Доход - прочее", 1),
+        ("6200", "Доход", "Доход - прочее", 1),
+        ("7010", "Себестоимость", "Прочие", 1),
+        ("7110", "Расходы по реализации", "Прочее", 1),
+        ("7210", "Административные расходы", "Прочее - услуги", 1),
+        ("6100", "Прочее", "Прочее", -1),
+        ("7300", "Прочее", "Финансовые расходы", 1),
+        ("7400", "Прочее", "Курсовые разницы", 1),
+        ("7710", "Прочее", "КПН", 1),
+    ],
+    columns=["account", "fb_section", "fb_pl_line", "fb_sign"],
+)
 
-print(len(osv), len(merged))
-print(merged[merged["pl_line"].isna()][["account", "article", "amount"]])
+merged = merged.merge(fallback, on="account", how="left")
+merged["recognized"] = merged["pl_line"].notna()
+
+merged["section"] = merged["section"].fillna(merged["fb_section"])
+merged["pl_line"] = merged["pl_line"].fillna(merged["fb_pl_line"])
+merged["sign"] = merged["sign"].fillna(merged["fb_sign"])
+
+unrecognized = merged[(~merged["recognized"]) & (merged["amount"] != 0)]
+print("Нераспознанные статьи с суммой:")
+print(unrecognized[["account", "article", "amount", "pl_line"]])
 
