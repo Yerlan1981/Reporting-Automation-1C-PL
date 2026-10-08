@@ -69,3 +69,14 @@ for file in files:
 osv = pd.concat(all_tables, ignore_index=True)
 
 print(osv.groupby(["period", "account"])["amount"].sum())
+
+pairs = osv[["account", "article"]].drop_duplicates()
+pairs["pl_line"] = ""
+mapping = pd.read_excel("mapping.xlsx", dtype={"account": str})
+mapping["article"] = mapping["article"].str.strip()
+
+merged = osv.merge(mapping, on=["account", "article"], how="left")
+
+print(len(osv), len(merged))
+print(merged[merged["pl_line"].isna()][["account", "article", "amount"]])
+
