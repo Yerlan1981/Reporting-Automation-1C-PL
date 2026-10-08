@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
+import re
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 250)
@@ -25,6 +26,17 @@ def clean_block(block, account):
     rows = rows.assign(account=account)
     return rows[["account", "article", "debit", "credit"]]
 
+MONTHS = {
+    "Январь": 1, "Февраль": 2, "Март": 3, "Апрель": 4,
+    "Май": 5, "Июнь": 6, "Июль": 7, "Август": 8,
+    "Сентябрь": 9, "Октябрь": 10, "Ноябрь": 11, "Декабрь": 12,
+}
+
+def get_period(df):
+    first_col = df[0].astype(str)
+    found = first_col[first_col.str.contains(r"за \S+ \d{4}")].iloc[0]
+    month_name, year = re.search(r"за (\S+) (\d{4})", found).groups()
+    return f"{year}-{MONTHS[month_name]:02d}"
 
 def load_osv(path):
     df = pd.read_excel(path, sheet_name="ОСВ", header=None)
@@ -46,17 +58,14 @@ def load_osv(path):
     osv = pd.concat(tables, ignore_index=True)
     osv["amount"] = osv["credit"].where(osv["account"].str.startswith("6"), osv["debit"])
     osv["amount"] = osv["amount"].fillna(0)
+    osv["period"] = get_period(df)
     return osv
-
 
 all_tables = []
 for file in files:
     table = load_osv(file)
-    table["period"] = file.stem[-7:].replace("_", "-")
     all_tables.append(table)
 
 osv = pd.concat(all_tables, ignore_index=True)
 
 print(osv.groupby(["period", "account"])["amount"].sum())
-
-
