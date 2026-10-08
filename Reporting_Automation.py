@@ -8,7 +8,7 @@ pd.set_option("display.width", 250)
 pd.options.display.float_format = "{:,.2f}".format
 
 INPUT_DIR = Path("data_input")
-files = list(INPUT_DIR.glob("*.xlsx"))
+files = [f for f in INPUT_DIR.glob("*.xlsx") if not f.name.startswith("~$")]
 
 
 def clean_block(block, account):
