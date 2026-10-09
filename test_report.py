@@ -69,3 +69,14 @@ def test_control_detects_lost_amount():
     lost = ok.copy()
     lost["pl_line"] = ["A", None]
     assert check_totals(osv, lost)["diff"].tolist() == [50.0]
+
+
+def test_kpn_account_rule_needs_no_mapping():
+    # счёт 7710: любая статья идёт в строку КПН и не считается нераспознанной
+    osv = pd.DataFrame({"account": ["7710"], "article": ["Любое название статьи"], "amount": [100.0]})
+
+    merged = apply_mapping(osv)
+
+    assert merged["pl_line"].iloc[0] == "КПН"
+    assert get_unrecognized(merged).empty
+    

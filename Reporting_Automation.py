@@ -43,8 +43,14 @@ FALLBACK = [
     ("6100", "Прочее", "Прочее", -1),
     ("7300", "Прочее", "Финансовые расходы", 1),
     ("7400", "Прочее", "Курсовые разницы", 1),
-    ("7710", "Прочее", "КПН", 1),
 ]
+ 
+# Правило по счёту целиком: любая статья этого счёта идёт в одну строку P&L,
+# в справочнике названия не нужны, и это не считается «нераспознанной» статьёй.
+# (счёт: (раздел, строка P&L, знак))
+ACCOUNT_RULES = {
+    "7710": ("Прочее", "КПН", 1),
+}
  
  
 # ------------------------------------------------- 1. чтение ОСВ из файла
@@ -115,6 +121,12 @@ def apply_mapping(osv):
     mapping = pd.read_excel(MAPPING_FILE, dtype={"account": str})
     mapping["article"] = mapping["article"].str.strip()
     merged = osv.merge(mapping, on=["account", "article"], how="left")
+ 
+    for account, (section, pl_line, sign) in ACCOUNT_RULES.items():
+        mask = (merged["account"] == account) & merged["pl_line"].isna()
+        merged.loc[mask, "section"] = section
+        merged.loc[mask, "pl_line"] = pl_line
+        merged.loc[mask, "sign"] = sign
  
     fallback = pd.DataFrame(FALLBACK, columns=["account", "fb_section", "fb_pl_line", "fb_sign"])
     merged = merged.merge(fallback, on="account", how="left")
@@ -372,4 +384,4 @@ def main():
  
 if __name__ == "__main__":
     main()
-
+    
