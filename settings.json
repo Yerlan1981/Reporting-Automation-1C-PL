@@ -1,0 +1,18 @@
+{
+  "project_metadata": {
+    "name": "1C P&L Automation Script",
+    "version": "1.0.0"
+  },
+  "source_data_settings": {
+    "target_allocation_account": "7010",
+    "description": "Себестоимость реализованной продукции (производственные затраты)"
+  },
+  "allocation_proportions": {
+    "gas_production_share": 0.65,
+    "gas_transportation_share": 0.35
+  },
+  "mathematical_validation": {
+    "ensure_total_sum_equals_100_percent": true,
+    "max_allowed_discrepancy_cents": 0
+  }
+}
